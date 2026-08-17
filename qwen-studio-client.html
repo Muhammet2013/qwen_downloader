@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Qwen Studio Client</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0b0d11;
+  --side:#11151b;
+  --panel:#151a22;
+  --panel2:#1a202a;
+  --panel3:#202734;
+  --line:#2a3340;
+  --text:#edf2f7;
+  --muted:#92a0b3;
+  --accent:#86a8ff;
+  --accent2:#9ece6a;
+  --danger:#f7768e;
+  --warn:#e0af68;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  overflow:hidden;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{
+  height:100%;
+  display:grid;
+  grid-template-columns:260px minmax(0,1fr) 300px;
+}
+.sidebar,.settings{
+  background:var(--side);
+  border-color:var(--line);
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+.sidebar{border-right:1px solid var(--line)}
+.settings{border-left:1px solid var(--line)}
+.topbar{
+  height:58px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 14px;
+  border-bottom:1px solid var(--line);
+  background:var(--side);
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:16px 14px 12px;
+}
+.logo{
+  width:32px;height:32px;border-radius:10px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#27324a,#1b2230);
+  border:1px solid #33405a;
+  font-weight:900;
+}
+.brandtext{font-weight:800;letter-spacing:.2px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.sidebar-actions{display:flex;gap:8px;padding:0 12px 12px}
+.btn{
+  border:1px solid var(--line);
+  background:var(--panel2);
+  color:var(--text);
+  border-radius:9px;
+  padding:8px 10px;
+}
+.btn:hover{background:var(--panel3)}
+.btn.primary{
+  background:var(--accent);
+  color:#0b1018;
+  border-color:transparent;
+  font-weight:800;
+}
+.btn.danger{color:#ffd2dc}
+.btn.icon{padding:7px 9px}
+.sidebar-list{
+  flex:1;overflow:auto;padding:0 8px 12px;
+}
+.chat-item{
+  padding:10px 10px;
+  border-radius:8px;
+  color:#dce4ee;
+  cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.chat-item:hover{background:var(--panel2)}
+.chat-item.active{background:var(--panel3)}
+.side-footer{
+  border-top:1px solid var(--line);
+  padding:10px 12px;
+}
+.center{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+}
+.url{
+  flex:1;min-width:180px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:9px 11px;
+  border-radius:9px;
+  outline:none;
+}
+.model-select{
+  min-width:210px;
+  max-width:300px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:9px 11px;
+  border-radius:9px;
+}
+.status{
+  width:10px;height:10px;border-radius:50%;background:#586272;
+  box-shadow:0 0 0 3px rgba(255,255,255,.03);
+}
+.status.ok{background:var(--accent2)}
+.status.bad{background:var(--danger)}
+.chat{
+  flex:1;
+  overflow:auto;
+  padding:26px max(22px,calc((100% - 860px)/2));
+}
+.empty{
+  height:100%;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  color:var(--muted);
+}
+.empty h2{color:var(--text);margin:0 0 8px;font-size:22px}
+.msg{
+  margin:0 0 22px;
+}
+.msg-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:7px;
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.avatar{
+  width:24px;height:24px;border-radius:7px;
+  display:grid;place-items:center;
+  background:var(--panel3);
+  color:var(--text);
+  font-size:11px;
+}
+.msg-body{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:13px 15px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  line-height:1.65;
+}
+.msg.user .msg-body{background:#151d2a}
+.msg.error .msg-body{border-color:var(--danger);color:#ffd5de}
+.composer-wrap{
+  border-top:1px solid var(--line);
+  background:linear-gradient(to top,var(--side),rgba(17,21,27,.97));
+  padding:12px max(18px,calc((100% - 880px)/2)) 14px;
+}
+.composer{
+  display:flex;
+  gap:10px;
+  align-items:flex-end;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel);
+  padding:9px;
+}
+.composer textarea{
+  flex:1;
+  min-height:54px;
+  max-height:180px;
+  resize:none;
+  border:0;
+  outline:none;
+  background:transparent;
+  color:var(--text);
+  padding:7px 8px;
+}
+.composer-foot{
+  margin-top:7px;
+  display:flex;justify-content:space-between;
+  color:var(--muted);font-size:11px;
+}
+.settings-head{
+  height:58px;
+  border-bottom:1px solid var(--line);
+  padding:0 14px;
+  display:flex;align-items:center;
+  font-weight:800;
+}
+.settings-scroll{
+  overflow:auto;
+  padding:13px;
+}
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:12px;
+  margin-bottom:11px;
+}
+.card-title{
+  font-size:12px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:10px;
+  font-weight:800;
+}
+.field{margin-bottom:11px}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:6px;
+  color:#dbe3ee;
+  font-size:12px;
+}
+.field input,.field select,.field textarea{
+  width:100%;
+  background:var(--panel2);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:8px 9px;
+  outline:none;
+}
+.field textarea{min-height:110px;resize:vertical}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;color:#dbe3ee;font-size:12px;
+}
+.toggle input{width:auto}
+.kv{
+  display:flex;justify-content:space-between;
+  gap:10px;color:var(--muted);font-size:12px;margin:4px 0;
+}
+@media(max-width:1050px){
+  .app{grid-template-columns:230px 1fr}
+  .settings{display:none}
+}
+@media(max-width:720px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .topbar{height:auto;flex-wrap:wrap;padding:10px}
+  .url,.model-select{min-width:100%;max-width:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">Q</div>
+      <div>
+        <div class="brandtext">Qwen Studio</div>
+        <div class="small muted">Remote llama.cpp client</div>
+      </div>
+    </div>
+
+    <div class="sidebar-actions">
+      <button class="btn primary" id="newChat" style="flex:1">+ Yeni Sohbet</button>
+    </div>
+
+    <div class="sidebar-list" id="chatList"></div>
+
+    <div class="side-footer">
+      <div class="small muted">Yerel sohbet geçmişi</div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="exportBtn">Export</button>
+        <button class="btn" id="importBtn">Import</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" hidden>
+    </div>
+  </aside>
+
+  <main class="center">
+    <div class="topbar">
+      <div class="status" id="connDot"></div>
+      <input class="url" id="baseUrl" placeholder="https://xxxx-8080.proxy.runpod.net">
+      <select class="model-select" id="modelSelect">
+        <option value="">Model otomatik</option>
+      </select>
+      <button class="btn" id="connectBtn">Bağlan</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <textarea id="prompt" placeholder="Mesaj yaz..."></textarea>
+        <button class="btn" id="stopBtn" disabled>Durdur</button>
+        <button class="btn primary" id="sendBtn">Gönder</button>
+      </div>
+      <div class="composer-foot">
+        <span>Enter gönder • Shift+Enter yeni satır</span>
+        <span id="tokenInfo">Hazır</span>
+      </div>
+    </div>
+  </main>
+
+  <aside class="settings">
+    <div class="settings-head">Generation</div>
+    <div class="settings-scroll">
+
+      <div class="card">
+        <div class="card-title">System Prompt</div>
+        <div class="field">
+          <textarea id="systemPrompt" placeholder="You are a helpful assistant."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sampling</div>
+
+        <div class="field">
+          <label><span>Temperature</span><span id="tempVal">0.70</span></label>
+          <input id="temperature" type="range" min="0" max="2" step="0.05" value="0.7">
+        </div>
+
+        <div class="field">
+          <label><span>Top P</span><span id="topPVal">0.95</span></label>
+          <input id="topP" type="range" min="0" max="1" step="0.01" value="0.95">
+        </div>
+
+        <div class="field">
+          <label><span>Top K</span><span id="topKVal">40</span></label>
+          <input id="topK" type="range" min="0" max="200" step="1" value="40">
+        </div>
+
+        <div class="field">
+          <label><span>Min P</span><span id="minPVal">0.05</span></label>
+          <input id="minP" type="range" min="0" max="1" step="0.01" value="0.05">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Limits</div>
+        <div class="field">
+          <label>Max Tokens</label>
+          <input id="maxTokens" type="number" value="4096" min="1" step="1">
+        </div>
+        <div class="toggle">
+          <span>Streaming</span>
+          <input id="streaming" type="checkbox" checked>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Server</div>
+        <div class="kv"><span>Status</span><span id="serverStatus">Offline</span></div>
+        <div class="kv"><span>Model</span><span id="serverModel">-</span></div>
+        <div class="kv"><span>Endpoint</span><span>/v1/chat/completions</span></div>
+      </div>
+
+      <button class="btn danger" id="clearAll" style="width:100%">Tüm Sohbetleri Sil</button>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const state = {
+  chats: [],
+  activeId: null,
+  controller: null,
+  connected: false
+};
+
+function uid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+
+function save(){
+  localStorage.setItem("qwenStudioChats", JSON.stringify(state.chats));
+  localStorage.setItem("qwenStudioActive", state.activeId || "");
+  localStorage.setItem("qwenStudioUrl", $("baseUrl").value.trim());
+  localStorage.setItem("qwenStudioSystem", $("systemPrompt").value);
+}
+
+function load(){
+  try{ state.chats = JSON.parse(localStorage.getItem("qwenStudioChats") || "[]"); }catch{ state.chats=[]; }
+  state.activeId = localStorage.getItem("qwenStudioActive") || null;
+  $("baseUrl").value = localStorage.getItem("qwenStudioUrl") || "";
+  $("systemPrompt").value = localStorage.getItem("qwenStudioSystem") || "";
+  if(!state.chats.length) createChat(false);
+  if(!state.chats.some(c=>c.id===state.activeId)) state.activeId = state.chats[0].id;
+}
+
+function createChat(render=true){
+  const chat = { id: uid(), title:"Yeni Sohbet", messages:[] };
+  state.chats.unshift(chat);
+  state.activeId = chat.id;
+  save();
+  if(render){ renderSidebar(); renderChat(); }
+}
+
+function activeChat(){
+  return state.chats.find(c=>c.id===state.activeId);
+}
+
+function renderSidebar(){
+  const list = $("chatList");
+  list.innerHTML = "";
+  state.chats.forEach(c=>{
+    const item = document.createElement("div");
+    item.className = "chat-item" + (c.id===state.activeId ? " active":"");
+    item.textContent = c.title;
+    item.onclick = ()=>{
+      state.activeId = c.id;
+      save();
+      renderSidebar();
+      renderChat();
+    };
+    list.appendChild(item);
+  });
+}
+
+function renderChat(){
+  const box = $("chat");
+  box.innerHTML = "";
+  const c = activeChat();
+  if(!c || !c.messages.length){
+    box.innerHTML = `<div class="empty"><div><h2>Qwen Studio</h2><div>RunPod llama-server'a bağlan ve konuşmaya başla.</div></div></div>`;
+    return;
+  }
+  c.messages.forEach(m=>appendMessageDOM(m.role,m.content,false));
+}
+
+function appendMessageDOM(role,text,scroll=true){
+  const wrap=document.createElement("div");
+  wrap.className="msg "+role;
+
+  const head=document.createElement("div");
+  head.className="msg-head";
+
+  const avatar=document.createElement("div");
+  avatar.className="avatar";
+  avatar.textContent = role==="user" ? "U" : "Q";
+
+  const name=document.createElement("span");
+  name.textContent = role==="user" ? "Sen" : "Qwen";
+
+  head.append(avatar,name);
+
+  const body=document.createElement("div");
+  body.className="msg-body";
+  body.textContent=text;
+
+  wrap.append(head,body);
+  $("chat").appendChild(wrap);
+
+  if(scroll) $("chat").scrollTop=$("chat").scrollHeight;
+  return body;
+}
+
+function cleanBase(){
+  let u=$("baseUrl").value.trim().replace(/\/+$/,"");
+  if(u.endsWith("/v1")) u=u.slice(0,-3);
+  return u;
+}
+
+async function connect(){
+  const base=cleanBase();
+  if(!base) return setConnection(false,"URL boş");
+
+  setConnection(false,"Bağlanıyor...");
+  try{
+    const r=await fetch(base+"/v1/models");
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const data=await r.json();
+
+    const sel=$("modelSelect");
+    sel.innerHTML='<option value="">Model otomatik</option>';
+
+    const models=data?.data || [];
+    models.forEach(m=>{
+      const o=document.createElement("option");
+      o.value=m.id;
+      o.textContent=m.id;
+      sel.appendChild(o);
+    });
+
+    if(models[0]){
+      sel.value=models[0].id;
+      $("serverModel").textContent=models[0].id;
+    }
+
+    state.connected=true;
+    setConnection(true,"Online");
+    save();
+  }catch(e){
+    state.connected=false;
+    setConnection(false,"Offline: "+e.message);
+  }
+}
+
+function setConnection(ok,text){
+  $("connDot").className="status "+(ok?"ok":"bad");
+  $("serverStatus").textContent=text;
+}
+
+async function send(){
+  if(state.controller) return;
+
+  const text=$("prompt").value.trim();
+  if(!text) return;
+
+  if(!state.connected){
+    await connect();
+    if(!state.connected) return;
+  }
+
+  const c=activeChat();
+  $("prompt").value="";
+
+  c.messages.push({role:"user",content:text});
+  if(c.title==="Yeni Sohbet") c.title=text.slice(0,36)+(text.length>36?"…":"");
+  appendMessageDOM("user",text);
+  renderSidebar();
+
+  const aiBody=appendMessageDOM("assistant","");
+  const assistantMsg={role:"assistant",content:""};
+  c.messages.push(assistantMsg);
+
+  const base=cleanBase();
+  const model=$("modelSelect").value || "qwen";
+  const sys=$("systemPrompt").value.trim();
+
+  const messages=[];
+  if(sys) messages.push({role:"system",content:sys});
+  messages.push(...c.messages.slice(0,-1));
+
+  const payload={
+    model,
+    messages,
+    stream:$("streaming").checked,
+    temperature:Number($("temperature").value),
+    top_p:Number($("topP").value),
+    top_k:Number($("topK").value),
+    min_p:Number($("minP").value),
+    max_tokens:Number($("maxTokens").value)
+  };
+
+  state.controller=new AbortController();
+  $("sendBtn").disabled=true;
+  $("stopBtn").disabled=false;
+  $("tokenInfo").textContent="Üretiyor...";
+
+  try{
+    const r=await fetch(base+"/v1/chat/completions",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload),
+      signal:state.controller.signal
+    });
+
+    if(!r.ok) throw new Error("HTTP "+r.status+" "+await r.text());
+
+    if(payload.stream){
+      const reader=r.body.getReader();
+      const dec=new TextDecoder();
+      let buf="",answer="";
+
+      while(true){
+        const {value,done}=await reader.read();
+        if(done) break;
+
+        buf+=dec.decode(value,{stream:true});
+        const lines=buf.split("\n");
+        buf=lines.pop();
+
+        for(const raw of lines){
+          const line=raw.trim();
+          if(!line.startsWith("data:")) continue;
+
+          const chunk=line.slice(5).trim();
+          if(chunk==="[DONE]") continue;
+
+          try{
+            const obj=JSON.parse(chunk);
+            const token=obj?.choices?.[0]?.delta?.content ?? "";
+            if(token){
+              answer+=token;
+              assistantMsg.content=answer;
+              aiBody.textContent=answer;
+              $("chat").scrollTop=$("chat").scrollHeight;
+            }
+          }catch{}
+        }
+      }
+    }else{
+      const data=await r.json();
+      assistantMsg.content=data?.choices?.[0]?.message?.content || "";
+      aiBody.textContent=assistantMsg.content || "(boş cevap)";
+    }
+
+    save();
+    $("tokenInfo").textContent="Hazır";
+  }catch(e){
+    if(e.name==="AbortError"){
+      $("tokenInfo").textContent="Durduruldu";
+    }else{
+      assistantMsg.content="HATA: "+e.message;
+      aiBody.textContent=assistantMsg.content;
+      aiBody.parentElement.classList.add("error");
+      $("tokenInfo").textContent="Hata";
+    }
+    save();
+  }finally{
+    state.controller=null;
+    $("sendBtn").disabled=false;
+    $("stopBtn").disabled=true;
+  }
+}
+
+function stop(){
+  if(state.controller) state.controller.abort();
+}
+
+function exportChats(){
+  const data = {
+    exportedAt:new Date().toISOString(),
+    chats:state.chats
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="qwen-studio-chats.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importChats(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!Array.isArray(data.chats)) throw new Error("Geçersiz dosya");
+      state.chats=data.chats;
+      state.activeId=state.chats[0]?.id || null;
+      if(!state.activeId) createChat(false);
+      save();
+      renderSidebar();
+      renderChat();
+    }catch(e){ alert("Import hatası: "+e.message); }
+  };
+  reader.readAsText(file);
+}
+
+function wireRange(id,out,decimals=2){
+  const el=$(id), o=$(out);
+  const update=()=>o.textContent=Number(el.value).toFixed(decimals);
+  el.addEventListener("input",update);
+  update();
+}
+
+wireRange("temperature","tempVal",2);
+wireRange("topP","topPVal",2);
+wireRange("topK","topKVal",0);
+wireRange("minP","minPVal",2);
+
+$("newChat").onclick=()=>createChat(true);
+$("connectBtn").onclick=connect;
+$("sendBtn").onclick=send;
+$("stopBtn").onclick=stop;
+$("exportBtn").onclick=exportChats;
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=e=>e.target.files[0]&&importChats(e.target.files[0]);
+$("clearAll").onclick=()=>{
+  if(confirm("Tüm sohbet geçmişi silinsin mi?")){
+    state.chats=[]; createChat(false); save(); renderSidebar(); renderChat();
+  }
+};
+
+$("prompt").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){
+    e.preventDefault();
+    send();
+  }
+});
+
+$("systemPrompt").addEventListener("input",save);
+$("baseUrl").addEventListener("change",save);
+
+load();
+renderSidebar();
+renderChat();
+
+if($("baseUrl").value.trim()) connect();
+</script>
+</body>
+</html>
